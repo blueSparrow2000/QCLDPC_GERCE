@@ -3,6 +3,8 @@ from variables import *
 import time
 from verifier import compare_matrix
 from numba import njit, prange
+from util import *
+
 
 @njit(parallel=True)
 def ldpc_bitflip_seqdecode_numba(H, codewords, max_iter=100, weight_tolerance=2):
@@ -137,4 +139,40 @@ def ldpc_bitflip_seqdecode_numba(H, codewords, max_iter=100, weight_tolerance=2)
             flips[b] = total_flips
 
     return decoded, success, iters, syndromes, flips
+
+
+if __name__ == "__main__": # 19.77 sec
+
+    # H, A = sample_LDPC(codeword_len, databit_num, density=density, pooling_factor=pooling_factor,
+    #                    noise_level=noise_level, save_noise_free=True)
+    # A_error_free = read_matrix('error_free_codeword')
+
+    H = read_matrix("H_recovered")
+    A = read_matrix("noisy_codeword")
+    A_error_free = read_matrix('error_free_codeword')
+
+    # 원래 codeword matrix 중에 correct codeword의 개수 (error 개수는 10^(-4)으로 고정되어있지만, 그게 한 코드워드에 여러군데 발생했을 수 있음)
+    # 이 값을 봐야 몇개를 더 디코딩하는데 성공했는지 알 수 있음
+    total_codewords = pooling_factor * codeword_len
+    correct_codewords = compare_matrix(A_error_free, A)
+    # noisy_codewords = total_codewords - correct_codewords
+    print("Codeword generated: noise is added, so correct  prior codeword number is as follows")
+    print("Correct / Total = {} / {}".format(correct_codewords,total_codewords) )
+
+
+    # H = H[:parity_num // 2]  # only use half of H
+    #H = H[:3*parity_num//4] # only use quarter
+
+    start_time = time.time()
+    decoded, ok, its, syn, flips = ldpc_bitflip_seqdecode_numba(H, A, max_iter=50)
+    print("Total elapsed time: %s seconds" % round(time.time() - start_time, 3))
+
+    print()
+    # compare matrix
+    correct_guess = compare_matrix(A_error_free, decoded)
+    print("failed decoding: {} / {}".format(total_codewords - ok.sum(),
+                                            total_codewords))  # ok는 decoding 성공한 word개수를 뜻함. 즉 decoder가 생각하기에 자신이 decoding 실패한 codeword개수가 이 값임
+    print("Correct codewords after decoding: ")
+    print("Correct / Total = {} / {}".format(correct_guess, total_codewords))  # 전체 중에 디코딩 성공한 거 개수
+    print("Recovered {} more correct codewords".format(correct_guess - correct_codewords))
 

@@ -4,11 +4,13 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
 
-def save_data(filename, data):
-    with open('H_saves/%s.txt'%filename, 'w', newline='') as f:
+############################### data saver
+def save_data(filename, data, mode):
+    with open('H_saves/%s.txt'%filename, mode, newline='') as f:
         f.write(data)
 
-def save_matrix(H, filename = ''):
+
+def save_matrix(H, filename = '', mode = 'w'):
     m,n = H.shape
     data = ""
     for i in range(m):
@@ -17,27 +19,37 @@ def save_matrix(H, filename = ''):
         data += "\n"
     if filename =='':
         filename = "n_{}_k_{}".format(codeword_len, databit_num)
-    save_data(filename, data)
+    save_data(filename, data, mode)
 
 # convert data into H matrix
 def read_matrix(filename):
     H = []
-    with open('H_saves/%s.txt'%filename, 'r', newline='') as f:
-        lines = f.readlines()
-        for line in lines:
-            row = []
-            line = line.strip()  # delete newline characters
-            for bit in line:
-                row.append(int(bit))
-            H.append(row)
+    try:
+        with open('H_saves/%s.txt'%filename, 'r', newline='') as f:
+            lines = f.readlines()
+            for line in lines:
+                row = []
+                line = line.strip()  # delete newline characters
+                for bit in line:
+                    row.append(int(bit))
+                H.append(row)
 
-    return np.array(H)
+        return np.array(H)
+    except:
+        print("File not found: ", filename)
+        return None
+
+
+# Hmat_saved = read_H_matrix("n_10_k_8")
+# print(Hmat_saved)
 
 # save img file of H matrix in binary image
 def save_image_data(H, filename=None):
     if filename is None:
         filename = "n_{}_k_{}".format(codeword_len, databit_num)
     plt.imsave('H_saves/%s.png'%filename, H, cmap=cm.gray)
+
+
 
 
 # this is to exaggerate the difference
@@ -69,6 +81,8 @@ def save_error_image(A, diff, mode = 'stripes'):
                         for bj in range(j_min, j_max):
                             blob[bi,bj] = 1
         save_image_data(blob, filename="recovery_diff_blob")
+
+############################### data saver
 
 
 def write_csv_row(filename, datarow):

@@ -2,6 +2,7 @@ import numpy as np
 from ECO import *
 from ECO_original import *
 from extracter import *
+
 from variables import threshold, parity_num,databit_num
 from formatter import diag_format
 from gauss_elim import gf2elim

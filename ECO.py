@@ -1,6 +1,6 @@
 import numpy as np
 import numba
-from prettyprinter import *
+from formatter import *
 
 '''
 ECO후 얻어야 하는것
