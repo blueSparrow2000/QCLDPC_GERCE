@@ -4,8 +4,10 @@ Some variables to input
 import numpy as np
 
 mb = 4#4  # base checks -> related to parity vectors
-nb = 32# 9 #16  # base vars -> base rate ~ 0.9
+nb = 32#32# 9 #16  # base vars -> base rate ~ 0.9
 Z = 64# 16#64  # lifting factor (choose 64,128,256,...)
+pooling_factor = 10 #10 #7 # magic number - best
+
 target_rate = 1 - mb / nb
 codeword_len = nb * Z
 databit_num = codeword_len - mb * Z
@@ -21,7 +23,6 @@ elif codeword_len >= 2000:
 LARGE_CODE = True if codeword_len > 50 else False
 parity_num = codeword_len-databit_num
 noise_level= 10
-pooling_factor = 10 #7 # magic number - best
 BGCE = True # without BGCE, one may get more dual vectors but they are likely to be erronous
 threshold = round(((pooling_factor-1)*codeword_len)*0.325)  # suggested beta coeff on the paper
 if not BGCE: # if GCE, higher the threshold
