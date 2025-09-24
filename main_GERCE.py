@@ -65,12 +65,13 @@ mainIter = 0
 
 np.random.seed(2)  # randomize
 
-H_final = None  # currently found dual vectors
-H_recovered = None
+
+H_recovered = None  # currently found dual vectors - L.I check하기 위해 소량만 들고있는거
+H_final = None      # H_recover의 모든 row에 block shift를 취하여 불린 모든 parity check vector
 decoding_codeword_matrix = np.copy(A)
 
-
-if load_H_recovered and recovered_data_mode == 'a':  # append mode initialization
+# append mode initialization
+if load_H_recovered and recovered_data_mode == 'a':
     H_final = read_matrix('H_recovered')  # currently found dual vectors
     H_recovered = np.copy(H_final)
     if not (H_final is None) and H_final.size == 0:  # initial step but append mode
@@ -82,9 +83,6 @@ while mainIter < total_iteration:
     newerly_recovered_vec = None  # keep track of number of recovered vectors in a total loop
 
     for i in range(Nmin):
-        if (i + 1) % 10 == 0:  # show every 10th iteration count
-            print("{}th iteration".format(i + 1))
-            print("Current vectors: ", kappa)
         # 1. Sample col indices
         col_indices = sample_col_indices(decoding_codeword_matrix, v)
         Mv = decoding_codeword_matrix[:, col_indices]
@@ -143,21 +141,35 @@ while mainIter < total_iteration:
                 else:
                     newerly_recovered_vec = np.append(newerly_recovered_vec, [h], axis=0)  # add h into H
 
-    # 7. recover blocks
+        if (i + 1) % 10 == 0:  # show every 10th iteration count
+            print("{}th iteration".format(i + 1))
+            print("Current vectors: ", kappa)
+
+    # 7. recover blocks - 이미 한 패러티 검사 벡터가 다른 벡터의 block shift로 만들 수 있는 것이면 제거한다
     if get_all_block_shifts:
         if not (newerly_recovered_vec is None):  # if H_recovered is not None, and there is newerly found vectors
             for dual_vector in newerly_recovered_vec:  # for dual_vector in H_candidate: - sample L.I ones
-                shifts = qc_global_cyclic_shifts_numba(dual_vector, Z)  # shift해서 블럭 개수 늘리기 (block size is given, Z)
                 if H_final is None:
+                    shifts = qc_global_cyclic_shifts_numba(dual_vector, Z)  # shift해서 블럭 개수 늘리기 (block size is given, Z)
                     H_final = np.array(shifts)
                 else:
+                    # if dual vector is already in a array -> skip the process
+                    del_idx = np.where(np.all(dual_vector == H_final, axis=1)) # already in block shift
+                    if del_idx[0].size>0: # dual_vector.tolist() in H_final.tolist()
+                        # remove dual_vector from H_recovered if a dual vector can be obtained from block shifting
+                        # remove the first occurence
+                        del_in_H_recov = np.where(np.all(dual_vector == H_recovered, axis=1))
+                        H_recovered = np.delete(H_recovered, (del_in_H_recov[0][0]), axis=0)
+                        continue
+                    shifts = qc_global_cyclic_shifts_numba(dual_vector, Z)  # shift해서 블럭 개수 늘리기 (block size is given, Z)
                     H_final = np.concatenate((H_final, shifts), axis=0)
-                if recovered_data_mode == 'a':
-                    save_matrix(H_final, 'H_recovered', mode='a')
         else:
             print("H_recovered is None")
     else:
         H_final = H_recovered
+
+    if recovered_data_mode == 'a':
+        save_matrix(H_final, 'H_recovered', mode='a')
 
     # 8. decoding using hard decision bit flip
     if not error_free and not (newerly_recovered_vec is None):  # 새로 발견되는게 있을때만
