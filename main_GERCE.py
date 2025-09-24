@@ -58,7 +58,7 @@ v = round(codeword_len * 0.5)  # codeword_len #  # col_extract_num
 vmin = 0
 
 Nmin = 50  # 100 # parameter determined by v, n and BER (more than 100)
-GERCE_iter = 10#10#10  # number permutation iteration in GERCE - pass in 1 => dont permute
+GERCE_iter = 1#10#10  # number permutation iteration in GERCE - pass in 1 => dont permute
 total_iteration = 4  # full iteration number - decoding is done this amount
 
 mainIter = 0
@@ -170,6 +170,11 @@ while mainIter < total_iteration:
 
     if recovered_data_mode == 'a':
         save_matrix(H_final, 'H_recovered', mode='a')
+
+    if H_recovered is not None:
+        print("Shape of H_recovered", H_recovered.shape)
+    if H_final is not None:
+        print("Shape of H_final", H_final.shape)
 
     # 8. decoding using hard decision bit flip
     if not error_free and not (newerly_recovered_vec is None):  # 새로 발견되는게 있을때만
