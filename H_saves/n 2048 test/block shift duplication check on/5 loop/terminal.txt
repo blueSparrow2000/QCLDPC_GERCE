@@ -1,0 +1,136 @@
+C:\Users\kingc\PycharmProjects\QCLDPC_GERCE\.venv\Scripts\python.exe C:\Users\kingc\PycharmProjects\QCLDPC_GERCE\main_GERCE.py 
+##### variable settings #####
+(n, k) = (2048, 1792)
+Number of code words:  20480
+Threshold:  5990
+##############################
+Correct / Total = 16707 / 20480
+Elapsed time: 10.497 seconds
+====================
+1th main loop
+
+10th iteration
+Current vectors:  0
+20th iteration
+Current vectors:  0
+30th iteration
+Current vectors:  0
+40th iteration
+Current vectors:  0
+50th iteration
+Current vectors:  0
+H_recovered is None
+ 220.365 seconds
+====================
+2th main loop
+
+10th iteration
+Current vectors:  0
+20th iteration
+Current vectors:  0
+30th iteration
+Current vectors:  1
+40th iteration
+Current vectors:  2
+50th iteration
+Current vectors:  2
+
+index of duplicate block shift vector located in H_final [22]
+Does it really exist?  True
+index of duplicate block shift vector located in H_recovered [1]
+Shape of H_recovered (1, 2048)
+Shape of H_final (64, 2048)
+Decoding...
+Decoding complete -  456.192 seconds
+Correct / Total = 16824 / 20480
+====================
+3th main loop
+
+10th iteration
+Current vectors:  2
+20th iteration
+Current vectors:  2
+30th iteration
+Current vectors:  3
+40th iteration
+Current vectors:  3
+50th iteration
+Current vectors:  3
+
+index of duplicate block shift vector located in H_final []
+Does it really exist?  False
+
+index of duplicate block shift vector located in H_final [11]
+Does it really exist?  True
+index of duplicate block shift vector located in H_recovered [2]
+Shape of H_recovered (2, 2048)
+Shape of H_final (128, 2048)
+Decoding...
+Decoding complete -  526.666 seconds
+Correct / Total = 17376 / 20480
+====================
+4th main loop
+
+10th iteration
+Current vectors:  3
+20th iteration
+Current vectors:  3
+30th iteration
+Current vectors:  3
+40th iteration
+Current vectors:  3
+50th iteration
+Current vectors:  3
+
+index of duplicate block shift vector located in H_final []
+Does it really exist?  False
+Shape of H_recovered (3, 2048)
+Shape of H_final (192, 2048)
+Decoding...
+Decoding complete -  586.075 seconds
+Correct / Total = 18041 / 20480
+====================
+5th main loop
+
+10th iteration
+Current vectors:  4
+20th iteration
+Current vectors:  6
+30th iteration
+Current vectors:  7
+40th iteration
+Current vectors:  7
+50th iteration
+Current vectors:  8
+
+index of duplicate block shift vector located in H_final [142]
+Does it really exist?  True
+index of duplicate block shift vector located in H_recovered [3]
+
+index of duplicate block shift vector located in H_final [171]
+Does it really exist?  True
+index of duplicate block shift vector located in H_recovered [3]
+
+index of duplicate block shift vector located in H_final [182]
+Does it really exist?  True
+index of duplicate block shift vector located in H_recovered [3]
+
+index of duplicate block shift vector located in H_final [7]
+Does it really exist?  True
+index of duplicate block shift vector located in H_recovered [3]
+
+index of duplicate block shift vector located in H_final [145]
+Does it really exist?  True
+index of duplicate block shift vector located in H_recovered [3]
+Shape of H_recovered (3, 2048)
+Shape of H_final (192, 2048)
+Decoding...
+Decoding complete -  642.269 seconds
+Correct / Total = 18041 / 20480
+Main loop done - Elapsed time: 642.927 seconds
+
+Dual vectors missing:  64
+correct guess: 192 / 256
+Success?:  False
+
+종료 코드 0(으)로 완료된 프로세스

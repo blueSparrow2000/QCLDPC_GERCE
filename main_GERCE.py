@@ -1,3 +1,7 @@
+'''
+Implementation of LDPC PCM recovering method of paper:
+A fast reconstruction of the parity check matrices of LDPC codes in a noisy environment (2021)
+'''
 from QCLDPC_sampler import *
 from submatrix_sampler import *
 from block_recover import *
@@ -5,31 +9,15 @@ from verifier import *
 from formatter import *
 from util import *
 from bit_flip_decoder_sequential import ldpc_bitflip_seqdecode_numba
-
 from GERCE import GERCE
 from sparsifier import *
-
-
 import time
-
 start_time = time.time()
 
-'''
-Implementation of LDPC PCM recovering method of paper:
-A fast reconstruction of the parity check matrices of LDPC codes in a noisy environment (2021)
-'''
+# random seed for recovering process
+np.random.seed(2)
 
-# meta info
-skip_generation = True
-error_free = False  # False
-get_all_block_shifts = True  # True
-use_gauss_elim = False
-recovered_data_mode = 'a'  # 'w': write mode / 'a': append mode, add recovered PCM into existing H file, appending after finding a new parity check block
-load_H_recovered = False # 이미 H_recovered 파일이 있는 경우, 이걸 True로 설정하면 된다
-
-# 이걸 False로 하고 10번 메인 루프를 돌려야 완전 리커버리 성공함
-remove_duplicate_block_shift = True # block shift로 얻을 수 있는 parity check vector를 H_recovered에서 제거하는 옵션 (없는게 개수는 많이 찾지만 벡터 많아지면 느려짐)
-
+######################## generating / loading QC LDPC code & H ########################
 if error_free:
     noise_level = 0
 
@@ -55,22 +43,16 @@ print("Correct / Total = {} / {}".format(correct_codewords, total_codewords))
 
 print("Elapsed time: %s seconds" % round(time.time() - start_time, 3))
 #############################################################################################
-
-kappa = 0  # num_dual_vectors
-v = round(codeword_len * 0.5)  # codeword_len #  # col_extract_num
-vmin = 0
-
-Nmin = 50  # 100 # parameter determined by v, n and BER (more than 100)
-GERCE_iter = 1#10#10  # number permutation iteration in GERCE - pass in 1 => dont permute
-total_iteration = 5  # full iteration number - decoding is done this amount
-
-np.random.seed(2)  # randomize
-
-mainIter = 0
-
+'''
+H_recovered: GERCE로 직접적으로 얻은 벡터 -> 이걸로 linearly independent vector를 체킹하는 용도. block shift다 구해서 복원한 뒤 하면 느리기 때문에
+newerly_recovered_vector: H_recovered의 일부. block shift하려고 모아둔 벡터. main loop돌때마다 리셋된다. 이걸로 block shift해서 H_final을 구한다
+H_final: 모든 block shift를 다 구한 최종 벡터. 최종 복운된 H matrix이다.
+'''
 H_recovered = None  # currently found dual vectors - L.I check하기 위해 소량만 들고있는거
 H_final = None      # H_recover의 모든 row에 block shift를 취하여 불린 모든 parity check vector
 decoding_codeword_matrix = np.copy(A)
+col_sample_amount = round(codeword_len * sampling_rate)
+kappa = 0           # num_dual_vectors
 
 # append mode initialization
 if load_H_recovered and recovered_data_mode == 'a':
@@ -80,20 +62,21 @@ if load_H_recovered and recovered_data_mode == 'a':
         H_final = None
         H_recovered = None
 
+mainIter = 0
 while mainIter < total_iteration:
     print('='*20)
     print("{}th main loop".format(mainIter+1))
-    print()
+    print('='*20)
 
     # this vector is used for only block shift purposes
     newerly_recovered_vec = None  # keep track of number of recovered vectors in a total loop
 
     for i in range(Nmin):
         # 1. Sample col indices
-        col_indices = sample_col_indices(decoding_codeword_matrix, v)
+        col_indices = sample_col_indices(decoding_codeword_matrix, col_sample_amount)
         Mv = decoding_codeword_matrix[:, col_indices]
 
-        if use_gauss_elim:  # not ready yet
+        if use_gauss_elim:
             # gauss elim method
             Gs = gf2elim(Mv)
             mv, _ = Gs.shape
@@ -102,7 +85,7 @@ while mainIter < total_iteration:
                                    dtype=np.uint8)
             G_recovered[:, col_indices] = Gs
 
-            # 아래도 formatting이후에 해야하는 작업임!
+            # Below is the work that needs to be done after formatting!
             P = G_recovered[:, databit_num:]
             P_t = np.transpose(P)
             H_pad = np.concatenate((P_t, np.identity(parity_num, dtype=np.uint8)), axis=1)
@@ -122,7 +105,7 @@ while mainIter < total_iteration:
 
         # 5. remove vectors that does not satisfy block constraint(weight 1 in a row per block etc.)
         H_candidate = get_block_candidates(H_pad, codeword_len, Z)
-        if not H_candidate: # no entries
+        if not H_candidate:
             mv = 0
         else:
             H_candidate = np.array(H_candidate)
@@ -151,30 +134,33 @@ while mainIter < total_iteration:
             print("{}th iteration".format(i + 1))
             print("Current vectors: ", kappa)
 
-    # 7. recover blocks - 이미 한 패러티 검사 벡터가 다른 벡터의 block shift로 만들 수 있는 것이면 제거한다
+    # 7. recover blocks - if a parity check vector can already be made by block shifting another vector, it is removed
     if get_all_block_shifts:
         if not (newerly_recovered_vec is None):  # if H_recovered is not None, and there is newerly found vectors
             for dual_vector in newerly_recovered_vec:  # for dual_vector in H_candidate: - sample L.I ones
+                shifts = None
                 if H_final is None:
-                    shifts = qc_global_cyclic_shifts_numba(dual_vector, Z)  # shift해서 블럭 개수 늘리기 (block size is given, Z)
+                    shifts = qc_global_cyclic_shifts_numba(dual_vector, Z)  # shift (when block size is given, Z)
                     H_final = np.array(shifts)
                 else:
-                    # if dual vector is already in a array -> skip the process
+                    # if dual vector is already in a array -> skip this vector
                     if remove_duplicate_block_shift:
-                        del_idx = np.where(np.all(dual_vector == H_final, axis=1)) # already in block shift
+                        del_idx = np.where(np.all(dual_vector == H_final, axis=1))
                         print()
                         print("index of duplicate block shift vector located in H_final",del_idx[0])
-                        print("Does it really exist? ",del_idx[0].size>0)
+                        # print("Does it really exist? ",del_idx[0].size>0)
                         if del_idx[0].size>0: # dual_vector.tolist() in H_final.tolist()
                             # remove dual_vector from H_recovered if a dual vector can be obtained from block shifting
-                            # remove the first occurence
                             del_in_H_recov = np.where(np.all(dual_vector == H_recovered, axis=1))
                             print("index of duplicate block shift vector located in H_recovered",del_in_H_recov[0])
-                            H_recovered = np.delete(H_recovered, (del_in_H_recov[0][0]), axis=0)
+                            H_recovered = np.delete(H_recovered, (del_in_H_recov[0][0]), axis=0) # remove the first occurence
                             kappa -= 1
                             continue
-                    shifts = qc_global_cyclic_shifts_numba(dual_vector, Z)  # shift해서 블럭 개수 늘리기 (block size is given, Z)
+                    shifts = qc_global_cyclic_shifts_numba(dual_vector, Z)
                     H_final = np.concatenate((H_final, shifts), axis=0)
+
+                if recovered_data_mode == 'a' and (shifts is not None):
+                    save_matrix(shifts, 'H_recovered', mode='a')
         else:
             print("H_recovered is None")
     else:
@@ -183,13 +169,11 @@ while mainIter < total_iteration:
     if H_recovered is not None:
         print("Shape of H_recovered", H_recovered.shape)
     if H_final is not None:
-        if recovered_data_mode == 'a':
-            save_matrix(H_final, 'H_recovered', mode='a')
         print("Shape of H_final", H_final.shape)
 
     # 8. decoding using hard decision bit flip
-    if not error_free and not (newerly_recovered_vec is None):  # 새로 발견되는게 있을때만
-        # H_final.astype(np.uint8) # 설마 이거 때문에 작동안된거임?!
+    if not error_free and not (newerly_recovered_vec is None):  # only when something new is discovered
+        # H_final.astype(np.uint8)
         # A.astype(np.uint8)
         print("Decoding...")
         decoded_codeword_matrix, ok, _, _, _ = ldpc_bitflip_seqdecode_numba(H_final, A, max_iter=50)
