@@ -52,7 +52,7 @@ H_recovered = None  # currently found dual vectors - L.I check하기 위해 소�
 H_final = None      # H_recover의 모든 row에 block shift를 취하여 불린 모든 parity check vector
 decoding_codeword_matrix = np.copy(A)
 col_sample_amount = round(codeword_len * sampling_rate)
-kappa = 0           # num_dual_vectors
+recovered_vector_count = 0           # num_dual_vectors
 
 # append mode initialization
 if load_H_recovered and recovered_data_mode == 'a':
@@ -116,14 +116,14 @@ while mainIter < total_iteration:
             h = H_candidate[j]  # a dual vector
             if H_recovered is None:
                 H_recovered = np.array([h])  # initial vector
-                kappa += 1
+                recovered_vector_count += 1
 
                 newerly_recovered_vec = np.array([h])  # initial vector
                 continue
             Htemp = np.append(H_recovered, [h], axis=0)
-            if np.linalg.matrix_rank(Htemp) > kappa:  # increase rank
+            if np.linalg.matrix_rank(Htemp) > recovered_vector_count:  # increase rank
                 H_recovered = np.append(H_recovered, [h], axis=0)  # add h into H
-                kappa += 1
+                recovered_vector_count += 1
 
                 if newerly_recovered_vec is None:
                     newerly_recovered_vec = np.array([h])  # initial vector
@@ -132,8 +132,9 @@ while mainIter < total_iteration:
 
         if (i + 1) % 10 == 0:  # show every 10th iteration count
             print("{}th iteration".format(i + 1))
-            print("Current vectors: ", kappa)
+            print("Current vectors: ", recovered_vector_count)
 
+    H_final_changed = False
     # 7. recover blocks - if a parity check vector can already be made by block shifting another vector, it is removed
     if get_all_block_shifts:
         if not (newerly_recovered_vec is None):  # if H_recovered is not None, and there is newerly found vectors
@@ -154,17 +155,19 @@ while mainIter < total_iteration:
                             del_in_H_recov = np.where(np.all(dual_vector == H_recovered, axis=1))
                             print("index of duplicate block shift vector located in H_recovered",del_in_H_recov[0])
                             H_recovered = np.delete(H_recovered, (del_in_H_recov[0][0]), axis=0) # remove the first occurence
-                            kappa -= 1
+                            recovered_vector_count -= 1
                             continue
                     shifts = qc_global_cyclic_shifts_numba(dual_vector, Z)
                     H_final = np.concatenate((H_final, shifts), axis=0)
 
                 if recovered_data_mode == 'a' and (shifts is not None):
                     save_matrix(shifts, 'H_recovered', mode='a')
+                    H_final_changed = True
         else:
             print("H_recovered is None")
     else:
         H_final = H_recovered
+        H_final_changed = True
 
     if H_recovered is not None:
         print("Shape of H_recovered", H_recovered.shape)
@@ -172,7 +175,7 @@ while mainIter < total_iteration:
         print("Shape of H_final", H_final.shape)
 
     # 8. decoding using hard decision bit flip
-    if not error_free and not (newerly_recovered_vec is None):  # only when something new is discovered
+    if not error_free and not (newerly_recovered_vec is None) and H_final_changed:  # only when something new is discovered & H_final is changed
         # H_final.astype(np.uint8)
         # A.astype(np.uint8)
         print("Decoding...")

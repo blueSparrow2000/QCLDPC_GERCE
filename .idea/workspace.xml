@@ -4,15 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c465dbcb-b042-41c4-8d5c-f134d87fbbf7" name="변경" comment="Bug fix">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GERCE_QCLDPC.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/H_saves/n 2048 test/H_recovered.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/H_saves/n 2048 test/recovered terminal.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/H_saves/n 2048 test/recovered_qc.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+    <list default="true" id="c465dbcb-b042-41c4-8d5c-f134d87fbbf7" name="변경" comment="Formatting code to look good">
       <change beforePath="$PROJECT_DIR$/main_GERCE.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_GERCE.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/variables.py" beforeDir="false" afterPath="$PROJECT_DIR$/variables.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -112,13 +105,22 @@
       <option name="project" value="LOCAL" />
       <updated>1758726159127</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Formatting code to look good">
+      <option name="closed" value="true" />
+      <created>1758765851718</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1758765851718</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Debug" />
     <MESSAGE value="No permute" />
     <MESSAGE value="Bug fix" />
-    <option name="LAST_COMMIT_MESSAGE" value="Bug fix" />
+    <MESSAGE value="Formatting code to look good" />
+    <option name="LAST_COMMIT_MESSAGE" value="Formatting code to look good" />
   </component>
 </project>
